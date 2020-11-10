@@ -42,6 +42,8 @@ def main():
 		start = time.time()
 
 		# open stream object as input
+		start_open_stream = time.time()
+
 		stream = pa.open(
     		format=pyaudio.paInt16,
    			channels=channels,
@@ -50,33 +52,56 @@ def main():
     		frames_per_buffer=chunk
     		)
 
+		end_open_stream = time.time()
+
 		# create audio frame
+		start_frame = time.time()
+
 		for i in range(num_chunks):
 			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
 
+		end_frame = time.time()
+
 		# stop and close stream
+		start_close_stream = time.time()
+
 		stream.stop_stream()
 		stream.close()
 
+		end_close_stream = time.time()
+
 		# set max freq
-		subprocess.Popen([
+		start_fmax_time = time.time()
+
+		subprocess.call([
+			'sudo',
+			'sh',
+			'-c',
+			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+        ])
+		end_fmax_time = time.time()
+
+		# set low freq
+		start_fmin_time = time.time()
+
+		subprocess.call([
 			'sudo',
 			'sh',
 			'-c',
 			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
         ])
 
-		# set low freq
-		subprocess.Popen([
-			'sudo',
-			'sh',
-			'-c',
-			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-        ])
+		end_fmin_time = time.time()
 
 		# compute cycle time
 		end = time.time() - start
-		print(end)
+
+		print("cycle time %s"%(end))
+		print("fmax transition %s"%(end_fmax_time - start_fmax_time))
+		print("fmin transition %s"%(end_fmin_time - start_fmin_time))
+		print("open stream time %s"%(end_open_stream - start_open_stream))
+		print("closing stream time %s"%(end_close_stream - start_close_stream))
+		print("frame time %s"%(end_frame - start_frame))
 
 	pa.terminate()
 
