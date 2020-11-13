@@ -57,16 +57,6 @@ def main():
 		upper_edge_hertz=4000
 		)
 
-	# set frequency
-	switch_start = time.time()
-	subprocess.call([
-		'sudo',
-		'sh',
-		'-c',
-		"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-	])
-	switch_time = time.time() - switch_start
-
 	# reset monitor
 	subprocess.call([
 		'sudo',
@@ -82,8 +72,14 @@ def main():
 
 		# start audio stream
 		stream.start_stream()
-		end_start_stream = time.time()
-		# create audio frame
+
+		subprocess.Popen([
+			'sudo',
+			'sh',
+			'-c',
+			"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+		])
+
 		for i in range(num_chunks):
 			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
 			if i == 7:
@@ -93,7 +89,6 @@ def main():
 					'-c',
 					"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 				])
-		end_frame = time.time()
 
 		# stop and close stream
 		stream.stop_stream()
@@ -112,13 +107,6 @@ def main():
 		conversion = tf.io.serialize_tensor(mfccs)
 		tf.io.write_file(args.output+"/mfccs"+str(sample)+".bin", conversion)
 		end_preprocessing = time.time()
-
-		subprocess.Popen([
-			'sudo',
-			'sh',
-			'-c',
-			"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-		])
 
 		# cycle time
 		end = time.time()
