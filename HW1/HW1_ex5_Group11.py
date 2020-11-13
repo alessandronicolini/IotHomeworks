@@ -4,7 +4,7 @@ import pyaudio
 import time
 from scipy import signal
 from io import BytesIO
-import  subprocess
+import subprocess
 import math
 import tensorflow as tf
 import os
@@ -46,6 +46,7 @@ def main():
 	# initilaize a data container array
 	frame = BytesIO(bytes(bytes_per_chunk*num_chunks))
 	view = frame.getbuffer()
+	file_temp = []
 
 	# mel weight matrix
 	linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
@@ -57,12 +58,14 @@ def main():
 		)
 
 	# set frequency
+	switch_start = time.time()
 	subprocess.call([
 		'sudo',
 		'sh',
 		'-c',
-		"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+		"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 	])
+	switch_time = time.time() - switch_start
 
 	# reset monitor
 	subprocess.call([
@@ -80,17 +83,23 @@ def main():
 		# start audio stream
 		stream.start_stream()
 		end_start_stream = time.time()
-
 		# create audio frame
 		for i in range(num_chunks):
 			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
+			if i == 7:
+				subprocess.Popen([
+					'sudo',
+					'sh',
+					'-c',
+					"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+				])
 		end_frame = time.time()
 
 		# stop and close stream
 		stream.stop_stream()
 		end_stop_stream = time.time()
 
-		# resample audio np array
+		# preprocessing
 		audio = np.frombuffer(frame.getvalue(), dtype=np.int16)
 		audio = signal.resample_poly(audio, 1,3)
 		tf_audio = tf.convert_to_tensor(audio, dtype=tf.float32)
@@ -104,15 +113,21 @@ def main():
 		tf.io.write_file(args.output+"/mfccs"+str(sample)+".bin", conversion)
 		end_preprocessing = time.time()
 
+		subprocess.Popen([
+			'sudo',
+			'sh',
+			'-c',
+			"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+		])
+
 		# cycle time
 		end = time.time()
 
-		print("start stream time %s"%(end_start_stream - start))
-		#print("fmax switch time %s"%(popen_fmax_end-popen_fmax_start))
-		print("frame %s"%(end_frame - end_start_stream))
-		print("stop stream time %s"%(end_stop_stream - end_frame))
+		#print("switch time %s"%(switch_time))
+		#print("start stream time %s"%(end_start_stream - start))
+		#print("frame %s"%(end_frame - end_start_stream))
+		#print("stop stream time %s"%(end_stop_stream - end_frame))
 		print("preprocessing time %s"%(end_preprocessing - end_stop_stream))
-		# print("fmin switch time %s"%(end - end_resample))
 		print("TOTAL TIME %s \n"%(end - start))
 
 	# close stream and perminate pa
