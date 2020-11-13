@@ -24,12 +24,12 @@ def main():
 	# make a pyaudio instance
 	pa = pyaudio.PyAudio()
 
-	# set freq to min value
-	subprocess.Popen([
+	# reset monitor
+	subprocess.call([
 		'sudo',
 		'sh',
 		'-c',
-		"echo powersave > /sxys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+		"echo 1 > /sys/devices/system/cpu/cpufreq/policy0/stats/reset"
 	])
 
 	# initilaize a data container array
@@ -42,8 +42,6 @@ def main():
 		start = time.time()
 
 		# open stream object as input
-		start_open_stream = time.time()
-
 		stream = pa.open(
     		format=pyaudio.paInt16,
    			channels=channels,
@@ -59,7 +57,16 @@ def main():
 
 		for i in range(num_chunks):
 			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
-
+			if time.time()-start_frame > 0.93:
+				popen_start = time.time()
+				subprocess.Popen([
+					'sudo',
+					'sh',
+					'-c',
+					"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+				])
+				popen_end = time.time()
+		audio = np.frombuffer(frame.getvalue(), dtype = np.int16)
 		end_frame = time.time()
 
 		# stop and close stream
@@ -70,38 +77,21 @@ def main():
 
 		end_close_stream = time.time()
 
-		# set max freq
-		start_fmax_time = time.time()
-
-		subprocess.call([
+		subprocess.Popen([
 			'sudo',
 			'sh',
 			'-c',
-			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-        ])
-		end_fmax_time = time.time()
+			"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+		])
 
-		# set low freq
-		start_fmin_time = time.time()
+		# cycle time
+		end = time.time()
 
-		subprocess.call([
-			'sudo',
-			'sh',
-			'-c',
-			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-        ])
-
-		end_fmin_time = time.time()
-
-		# compute cycle time
-		end = time.time() - start
-
-		print("cycle time %s"%(end))
-		print("fmax transition %s"%(end_fmax_time - start_fmax_time))
-		print("fmin transition %s"%(end_fmin_time - start_fmin_time))
-		print("open stream time %s"%(end_open_stream - start_open_stream))
+		print("cycle time %s"%(end-start))
+		print("open stream time %s"%(end_open_stream - start))
+		print("popen fmax time %s"%(popen_end-popen_start))
 		print("closing stream time %s"%(end_close_stream - start_close_stream))
-		print("frame time %s"%(end_frame - start_frame))
+		print("frame+close_stream time %s"%(end_close_stream - start_frame))
 
 	pa.terminate()
 
