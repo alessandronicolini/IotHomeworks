@@ -13,7 +13,7 @@ def main():
 
 	# read input
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--num_samples", type=int, help="number of samples to be recorded")
+	parser.add_argument("--num-samples", type=int, help="number of samples to be recorded")
 	parser.add_argument("--output",  type=str, help="directory where results are stored")
 	args = parser.parse_args()
 
@@ -24,7 +24,7 @@ def main():
 		pass
 
 	# define useful variavles
-	chunk = 4800  # length of a chunk
+	chunk = 2400  # length of a chunk
 	channels = 1
 	rate = 48000
 	bytes_per_chunk = 2*chunk # each value is int16, 2 bytes
@@ -47,6 +47,9 @@ def main():
 	frame = BytesIO(bytes(bytes_per_chunk*num_chunks))
 	view = frame.getbuffer()
 	file_temp = []
+
+	# initilaize cycle time list
+	cycle_time = []
 
 	# mel weight matrix
 	linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
@@ -81,18 +84,19 @@ def main():
 		])
 
 		for i in range(num_chunks):
-			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
-			if i == 7:
+			if i == 17:
 				subprocess.Popen([
 					'sudo',
 					'sh',
 					'-c',
 					"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 				])
+			view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk)
+
+
 
 		# stop and close stream
 		stream.stop_stream()
-		end_stop_stream = time.time()
 
 		# preprocessing
 		audio = np.frombuffer(frame.getvalue(), dtype=np.int16)
@@ -106,21 +110,17 @@ def main():
 		mfccs = tf.signal.mfccs_from_log_mel_spectrograms(log_mel_spectrogram)[..., :10]
 		conversion = tf.io.serialize_tensor(mfccs)
 		tf.io.write_file(args.output+"/mfccs"+str(sample)+".bin", conversion)
-		end_preprocessing = time.time()
 
 		# cycle time
-		end = time.time()
-
-		#print("switch time %s"%(switch_time))
-		#print("start stream time %s"%(end_start_stream - start))
-		#print("frame %s"%(end_frame - end_start_stream))
-		#print("stop stream time %s"%(end_stop_stream - end_frame))
-		print("preprocessing time %s"%(end_preprocessing - end_stop_stream))
-		print("TOTAL TIME %s \n"%(end - start))
+		cycle_time.append(time.time()-start)
 
 	# close stream and perminate pa
 	stream.close()
 	pa.terminate()
+
+	# print times
+	for cycle_t in cycle_time:
+		print(cycle_t)
 
 	# check times
 	subprocess.call([
