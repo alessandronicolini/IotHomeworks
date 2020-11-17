@@ -76,15 +76,16 @@ for sample in range(args.num_samples):
 	# start audio stream
 	stream.start_stream()
 
-	subprocess.Popen([
-		'sudo',
-		'sh',
-		'-c',
-		"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
-	])
-
+	frame_start = time.time()
 	for i in range(num_chunks):
-		if i == 9:
+		if i== 0:
+			subprocess.Popen([
+				'sudo',
+				'sh',
+				'-c',
+				"echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+			])
+		elif i == 9:
 			subprocess.Popen([
 				'sudo',
 				'sh',
@@ -92,6 +93,7 @@ for sample in range(args.num_samples):
 				"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 			])
 		view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk_size)
+	frame_t = time.time() - frame_start
 
 	# stop and close stream
 	stream.stop_stream()
@@ -107,12 +109,11 @@ for sample in range(args.num_samples):
 	log_mel_spectrogram = tf.math.log(mel_spectrogram + 1e-6)
 	mfccs = tf.signal.mfccs_from_log_mel_spectrograms(log_mel_spectrogram)[:, :10]
 	conversion = tf.io.serialize_tensor(mfccs)
-	save_start = time.time()
 	tf.io.write_file(args.output+"/mfccs"+str(sample)+".bin", conversion)
-	save_t = time.time() - save_start
 
 	# cycle time
 	cycle_time.append(time.time()-start)
+	#cycle_time.append(frame_t)
 
 # close stream and perminate pa
 stream.close()
