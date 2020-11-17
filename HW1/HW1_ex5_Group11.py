@@ -76,7 +76,6 @@ for sample in range(args.num_samples):
 	# start audio stream
 	stream.start_stream()
 
-	frame_start = time.time()
 	for i in range(num_chunks):
 		if i== 0:
 			subprocess.Popen([
@@ -93,7 +92,6 @@ for sample in range(args.num_samples):
 				"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 			])
 		view[i*bytes_per_chunk:(i+1)*bytes_per_chunk] = stream.read(chunk_size)
-	frame_t = time.time() - frame_start
 
 	# stop and close stream
 	stream.stop_stream()
@@ -113,7 +111,6 @@ for sample in range(args.num_samples):
 
 	# cycle time
 	cycle_time.append(time.time()-start)
-	#cycle_time.append(frame_t)
 
 # close stream and perminate pa
 stream.close()
