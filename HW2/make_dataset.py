@@ -36,7 +36,7 @@ mean = train_data.mean(axis=0)
 std = train_data.std(axis=0)
 
 input_width = 6
-LABEL_OPTIONS = 6#args.labels
+LABEL_OPTIONS = 6 #args.labels
 
 
 class WindowGenerator:
@@ -47,18 +47,9 @@ class WindowGenerator:
         self.std = tf.reshape(tf.convert_to_tensor(std), [1, 1, 2])
 
     def split_window(self, features):
-        input_indeces = np.arange(self.input_width)
         inputs = features[:, :-6, :]
-
-        # if self.label_options < 2:
-            # labels = features[:, -1, self.label_options]
-            # labels = tf.expand_dims(labels, -1)
-            # num_labels = 1
-        # else:
-            # labels = features[:, 6:-1, :]
-
-        num_labels = 6
         labels= features[:, -6:, :]
+        num_labels = 6
 
         inputs.set_shape([None, self.input_width, 2])
         labels.set_shape([None, num_labels, 2])
