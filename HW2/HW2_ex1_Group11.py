@@ -506,7 +506,7 @@ if version == 'a':
         base_model, 
         './clustered', 
         epochs=8, 
-        n_clusters=16, 
+        n_clusters=18, 
         lr=1e-4, 
         only_dense=True)
     print()
