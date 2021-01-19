@@ -2,6 +2,8 @@ import paho.mqtt.client as PahoMQTT
 import time
 from BasicClient import basicClient
 import tensorflow as tf
+import json
+import numpy as np
 
 class modelClient(basicClient):
     
@@ -16,13 +18,27 @@ class modelClient(basicClient):
         self.output_details = self.interpreter.get_output_details()
     
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):
-        print(msg.payload)
         
-        # leggi il payload del messaggio in formato SenML+JSON e prendi gli mfcc
+        # convert input message from binary string -> string -> dictionary
+        str_msg = msg.payload.decode('ascii')
+        dict_msg = json.loads(str_msg)
         
-        # leggi anche l'indice dell'elemento ricevuto
+        # get sample index
+        sample_idx = dict_msg['e'][0]['idx'] 
         
-        # fai la predizione
+        # get sample preprocessed
+        mfcc = tf.convert_to_tensor(dict_msg['e'][0]['vd'])  
         
-        # manda indietro i valori dei neuroni dell'ultimo layer in formato JSON insieme all'indice corrispondente
+        # make prediction
+        mfcc = np.expand_dims(mfcc, axis=0).astype(np.float32)
+        self.interpreter.set_tensor(self.input_details[0]['index'], mfcc)
+        self.interpreter.invoke()
+        logits = self.interpreter.get_tensor(self.output_details[0]['index'])
+        
+        # make out dictionay 
+        to_rasp_dict = {'logits': logits.squeeze().tolist(), 'idx':sample_idx}
+        json_to_rasp = json.dumps(to_rasp_dict)
+        
+        # send output layer to the raspberry
+        self.myPublish(self._publish_topic, json_to_rasp)
    

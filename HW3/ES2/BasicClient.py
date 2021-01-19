@@ -23,6 +23,7 @@ class basicClient:
         #manage connection to broker
         self._paho_mqtt.connect(self.messageBroker, 1883, keepalive=5)
         self._paho_mqtt.loop_start()
+        
         # subscribe for the topics
         for topic in self._subscribe_topics:
             self._paho_mqtt.subscribe(topic, 2)
@@ -31,8 +32,10 @@ class basicClient:
     def stop (self):
         for topic in self._subscribe_topics:
             self._paho_mqtt.unsubscribe(topic)
+        print('stopped and disconnected')
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
+        
             
     def myPublish(self, topic, message):
         # publish a message with a certain topic
