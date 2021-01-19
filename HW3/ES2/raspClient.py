@@ -16,8 +16,10 @@ class raspClient(basicClient):
         self.running_corrects = 0
         
     def myPublish(self, topic, message, sample_idx, sample_label):
+        # create the element which will contains the predictions 
         self._preds_dict[sample_idx] = (sample_label, [])
-        print(self._preds_dict[sample_idx])
+        
+        # send the message to the inference clients
         self._paho_mqtt.publish(self._publish_topic, message, 2)
         
         
@@ -30,12 +32,12 @@ class raspClient(basicClient):
         # check if the sample index is already in the dictionary
         # if yes append the current prediction otherwise create a new element
         sample_idx = dict_msg['idx']
-        print(sample_idx)
         pred = np.argmax(np.array(dict_msg['logits']))
         self._preds_dict[sample_idx][1].append(pred)
   
         # check if you can make the cooperative prediction 
         if len(self._preds_dict[sample_idx][1]) == self._n_models:
+            
             # cooperative prediction
             c_pred = Counter(self._preds_dict[sample_idx][1])
             c_pred = list(c_pred.items())
@@ -51,4 +53,3 @@ class raspClient(basicClient):
             del self._preds_dict[sample_idx]
         
        
-            
