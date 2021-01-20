@@ -8,9 +8,9 @@ from collections import Counter
 
 class coopMQTT(basicMQTT):
     
-    def __init__(self, clientID, subscribe_topics, publish_topic, n_models, len_dataset):
+    def __init__(self, clientID, subscribe_topics, publish_topic, n_models, len_dataset, QoS):
         
-        super().__init__(clientID, subscribe_topics, publish_topic)
+        super().__init__(clientID, subscribe_topics, publish_topic, QoS)
         self._n_models = n_models
         self._preds_dict = dict()
         self.running_corrects = 0
@@ -22,7 +22,7 @@ class coopMQTT(basicMQTT):
         self._preds_dict[sample_idx] = (sample_label, [])
         
         # send the message to the inference clients
-        self._paho_mqtt.publish(self._publish_topic, message, 2)
+        self._paho_mqtt.publish(self._publish_topic, message, self._QoS)
         
         
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):
@@ -33,12 +33,12 @@ class coopMQTT(basicMQTT):
         
         # append the prediction to the respective dictionary element
         sample_idx = dict_msg['idx']
-        print(sample_idx)
         pred = np.argmax(np.array(dict_msg['logits']))
         self._preds_dict[sample_idx][1].append(pred)
-  
+        
         # check if you can make the cooperative prediction 
         if len(self._preds_dict[sample_idx][1]) == self._n_models:
+            print(sample_idx)
             
             # cooperative prediction
             c_pred = Counter(self._preds_dict[sample_idx][1])

@@ -3,7 +3,7 @@ import time
 
 class basicMQTT:
     
-    def __init__(self, clientID, subscribe_topics, publish_topic):
+    def __init__(self, clientID, subscribe_topics, publish_topic, QoS):
 
         self.clientID = clientID
 
@@ -17,7 +17,7 @@ class basicMQTT:
         self._subscribe_topics = subscribe_topics
         self._publish_topic = publish_topic
         self.messageBroker = 'mqtt.eclipseprojects.io'
-
+        self._QoS = QoS
             
     def start (self):
         #manage connection to broker
@@ -46,7 +46,6 @@ class basicMQTT:
     
     def myPublish(self, topic, message):
         pass
-        # self._paho_mqtt.publish(self._publish_topic, message, 2)
 
         
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):

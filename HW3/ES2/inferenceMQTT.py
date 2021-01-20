@@ -7,16 +7,16 @@ import numpy as np
 
 class inferenceMQTT(basicMQTT):
     
-    def __init__(self, clientID, subscribe_topics, publish_topic, model_path):
+    def __init__(self, clientID, subscribe_topics, publish_topic, model_path, QoS):
         
-        super().__init__(clientID, subscribe_topics, publish_topic)
+        super().__init__(clientID, subscribe_topics, publish_topic, QoS)
         
         # model attributes
         self.interpreter = tf.lite.Interpreter(model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
-    
+        
     
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):
         
@@ -46,5 +46,5 @@ class inferenceMQTT(basicMQTT):
     
     
     def myPublish(self, topic, message):
-        self._paho_mqtt.publish(self._publish_topic, message, 2)
+        self._paho_mqtt.publish(self._publish_topic, message, self._QoS)
    
