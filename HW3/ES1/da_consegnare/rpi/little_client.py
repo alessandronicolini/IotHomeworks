@@ -13,7 +13,7 @@ import time
 
 #possibly use raspberry pi ip as device name
 #device_name = socket.gethostbyname(socket.gethostname())
-device_name = "little_device"
+device_name = "192.168.178.110"
 
 # DATASET CLASS ----------------------------------------------------------------
 class SignalGenerator:
@@ -116,7 +116,6 @@ if not data_dir.exists():
 
 #lista di labels
 labels = open('labels.txt').readlines()[0].split()
-print(labels)
 
 #lista di test
 test_list=[]
@@ -166,8 +165,8 @@ input_shape = input_details[0]['shape']
 #big little inference
 weight = 0
 invocations = 0
-treshold = 0.47
-url="http://127.0.0.1:8080"
+treshold = 0.4
+url="http://192.168.178.107:8080"
 running_corrects = 0
 total_elements = 0
 
@@ -199,7 +198,7 @@ for test_sample, audio_binary, label in  test_ds:
         r=requests.post(url, json=body)
 
         if r.status_code==200:
-            #ricevere la label predetta dal bigmodel
+            # ricevere la label predetta dal bigmodel
             rbody=r.json()
             prediction = rbody['pred']
         else :
@@ -213,5 +212,5 @@ for test_sample, audio_binary, label in  test_ds:
 
 accuracy = running_corrects/total_elements
 
-print("combined accuracy :" +str(accuracy*100)+"%")
-print("connection cost :"+str(weight/(1024*1024))+'MiB')
+print("Accuracy : %.2f %%"%(accuracy*100))
+print("Communication Cost : %.2f MB"%(weight/(1024*1024)))
