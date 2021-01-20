@@ -1,11 +1,11 @@
 import paho.mqtt.client as PahoMQTT
 import time
-from BasicClient import basicClient
+from basicMQTT import basicMQTT
 import tensorflow as tf
 import json
 import numpy as np
 
-class modelClient(basicClient):
+class inferenceMQTT(basicMQTT):
     
     def __init__(self, clientID, subscribe_topics, publish_topic, model_path):
         
@@ -17,14 +17,16 @@ class modelClient(basicClient):
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
     
+    
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):
         
         # convert input message from binary string -> string -> dictionary
-        str_msg = msg.payload.decode('ascii')
+        str_msg = msg.payload.decode()
         dict_msg = json.loads(str_msg)
         
         # get sample index
-        sample_idx = dict_msg['e'][0]['idx'] 
+        sample_idx = dict_msg['e'][0]['n'].split('_')[1]
+        sample_idx = int(sample_idx)
         
         # get sample preprocessed
         mfcc = tf.convert_to_tensor(dict_msg['e'][0]['vd'])  
@@ -41,4 +43,8 @@ class modelClient(basicClient):
         
         # send output layer to the raspberry
         self.myPublish(self._publish_topic, json_to_rasp)
+    
+    
+    def myPublish(self, topic, message):
+        self._paho_mqtt.publish(self._publish_topic, message, 2)
    

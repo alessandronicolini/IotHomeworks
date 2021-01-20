@@ -8,7 +8,6 @@ class DoSomething():
 		self.myMqttClient = MyMQTT(self.clientID, "mqtt.eclipseprojects.io", 1883, self) 
 		
 
-
 	def run(self):
 		# if needed, perform some other actions befor starting the mqtt communication
 		print ("running %s" % (self.clientID))

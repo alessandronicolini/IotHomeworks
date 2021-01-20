@@ -1,19 +1,21 @@
 import paho.mqtt.client as PahoMQTT
 import time
-from BasicClient import basicClient
+from basicMQTT import basicMQTT
 import tensorflow as tf
 import json
 import numpy as np
 from collections import Counter
 
-class raspClient(basicClient):
+class coopMQTT(basicMQTT):
     
-    def __init__(self, clientID, subscribe_topics, publish_topic, n_models):
+    def __init__(self, clientID, subscribe_topics, publish_topic, n_models, len_dataset):
         
         super().__init__(clientID, subscribe_topics, publish_topic)
         self._n_models = n_models
         self._preds_dict = dict()
         self.running_corrects = 0
+        self._len_dataset = len_dataset
+        self.last_received = False
         
     def myPublish(self, topic, message, sample_idx, sample_label):
         # create the element which will contains the predictions 
@@ -26,12 +28,12 @@ class raspClient(basicClient):
     def myOnMessageReceived(self, paho_mqtt , userdata, msg):
         
         # convert input message from binary string -> string -> dictionary
-        str_msg = msg.payload.decode('ascii')
+        str_msg = msg.payload.decode()
         dict_msg = json.loads(str_msg)
         
-        # check if the sample index is already in the dictionary
-        # if yes append the current prediction otherwise create a new element
+        # append the prediction to the respective dictionary element
         sample_idx = dict_msg['idx']
+        print(sample_idx)
         pred = np.argmax(np.array(dict_msg['logits']))
         self._preds_dict[sample_idx][1].append(pred)
   
@@ -46,10 +48,9 @@ class raspClient(basicClient):
             if self._preds_dict[sample_idx][0] == c_pred:
                 self.running_corrects += 1
             
-            if sample_idx == 799:
-                print('accuracy: %.2f %%'%(self.running_corrects/800*100))
-            
-            # free memory
+            if sample_idx == self._len_dataset-1:
+                self.last_received = True
+                #print('accuracy: %.2f %%'%(self.running_corrects/self._len_dataset*100))
+                         
+            # delete the already predicted element from the dictionary
             del self._preds_dict[sample_idx]
-        
-       
