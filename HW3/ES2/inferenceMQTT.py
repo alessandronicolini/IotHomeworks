@@ -25,8 +25,8 @@ class inferenceMQTT(basicMQTT):
         dict_msg = json.loads(str_msg)
         
         # get sample index
-        sample_idx = dict_msg['e'][0]['n'].split('_')[1]
-        sample_idx = int(sample_idx)
+        resource_id = dict_msg['e'][0]['n'].split('_')
+        sample_idx = int(resource_id[1])
         
         # get sample preprocessed
         mfcc = tf.convert_to_tensor(dict_msg['e'][0]['vd'])  
@@ -43,7 +43,10 @@ class inferenceMQTT(basicMQTT):
         
         # send output layer to the raspberry
         self.myPublish(self._publish_topic, json_to_rasp)
-    
+        
+        # if it was the last message stop the inference client
+        if len(resource_id) == 3:
+            self.stop()
     
     def myPublish(self, topic, message):
         self._paho_mqtt.publish(self._publish_topic, message, self._QoS)

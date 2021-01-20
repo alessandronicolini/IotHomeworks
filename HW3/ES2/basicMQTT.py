@@ -33,7 +33,7 @@ class basicMQTT:
         # unsubscribe fro all previoulsy subscriberd topics
         for topic in self._subscribe_topics:
             self._paho_mqtt.unsubscribe(topic)
-        print('stopped and disconnected')
+        print(self.clientID +' :stopped and disconnected')
         
         # stop and disconnect
         self._paho_mqtt.loop_stop()
