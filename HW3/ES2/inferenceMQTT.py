@@ -36,9 +36,10 @@ class inferenceMQTT(basicMQTT):
         self.interpreter.set_tensor(self.input_details[0]['index'], mfcc)
         self.interpreter.invoke()
         logits = self.interpreter.get_tensor(self.output_details[0]['index'])
+        probs = tf.nn.softmax(logits)
         
         # make out dictionay 
-        to_rasp_dict = {'logits': logits.squeeze().tolist(), 'idx':sample_idx}
+        to_rasp_dict = {'probs': probs.numpy().squeeze().tolist(), 'idx':sample_idx}
         json_to_rasp = json.dumps(to_rasp_dict)
         
         # send output layer to the raspberry
