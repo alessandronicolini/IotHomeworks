@@ -22,7 +22,6 @@ class basicMQTT:
     def start (self):
         #manage connection to broker
         self._paho_mqtt.connect(self.messageBroker, 1883) # keepalive = 5
-        print('okok')
         self._paho_mqtt.loop_start()
         
         # subscribe for the topics
