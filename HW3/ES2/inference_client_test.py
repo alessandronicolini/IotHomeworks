@@ -4,6 +4,9 @@ from basicMQTT import basicMQTT
 import tensorflow as tf
 import json
 import numpy as np
+import argparse
+import pathlib
+import os
 
 class inferenceMQTT(basicMQTT):
     
@@ -49,6 +52,7 @@ class inferenceMQTT(basicMQTT):
         if len(resource_id) == 3:
             self.stop()
     
+    
     def myPublish(self, topic, message):
         self._paho_mqtt.publish(self._publish_topic, message, self._QoS)
-   
+

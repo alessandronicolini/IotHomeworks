@@ -4,7 +4,12 @@ from basicMQTT import basicMQTT
 import tensorflow as tf
 import json
 import numpy as np
-from collections import Counter
+from dataset import SignalGenerator
+import pathlib
+import os
+import datetime
+from datetime import timezone
+
 
 class coopMQTT(basicMQTT):
     
@@ -16,7 +21,7 @@ class coopMQTT(basicMQTT):
         self.running_corrects = 0
         self._n_labels = n_labels
         self._len_dataset = len_dataset
-        self.last_received = False
+        
         
     def myPublish(self, topic, message, sample_idx, sample_label):
         # create the element which will contains the predictions 
@@ -40,19 +45,18 @@ class coopMQTT(basicMQTT):
         
         # check if you can make the cooperative prediction 
         if self._preds_dict[sample_idx][2] == self._n_models:
-            print(sample_idx)
             
             # cooperative prediction
-            """c_pred = Counter(self._preds_dict[sample_idx][1])
-            c_pred = list(c_pred.items())
-            c_pred.sort(key= lambda x:x[1], reverse=True)
-            c_pred = c_pred[0][0]"""
             c_pred = np.argmax(self._preds_dict[sample_idx][1])
             if self._preds_dict[sample_idx][0] == c_pred:
                 self.running_corrects += 1
             
+            # stop the rasp client
             if sample_idx == self._len_dataset-1:
-                self.last_received = True
+                print('Accuracy: %.3f %%'%(self.running_corrects/self._len_dataset*100))
+                self.stop()
                          
             # delete the already predicted element from the dictionary
             del self._preds_dict[sample_idx]
+            
+       
