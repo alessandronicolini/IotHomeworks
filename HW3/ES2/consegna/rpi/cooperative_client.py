@@ -47,7 +47,7 @@ class coopMQTT(basicMQTT):
         # check if you can make the cooperative prediction
         if self._preds_dict[sample_idx][2] == self._n_models:
             if (sample_idx+1)%40==0 :
-                print("progress : %.2f%%" %((sample_idx+1)/8))
+                print("progress: %d %%" %((sample_idx+1)/8))
 
             # cooperative prediction
             c_pred = np.argmax(self._preds_dict[sample_idx][1])
@@ -146,6 +146,7 @@ if __name__ == '__main__':
 
     while not coopClient.stop_flag:
         pass
-
+        
+    print()
     print('Accuracy: %.3f %%'%(coopClient.running_corrects/len(test_ds)*100))
     coopClient.stop()
